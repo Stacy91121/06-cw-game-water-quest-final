@@ -183,4 +183,21 @@ app.get('/api/stores', async (req,res) => {
   }
 });
 
+// GET /api/stores/pending  (admin only)
+app.get('/api/stores/pending', authMiddleware, adminMiddleware, async (req, res) => {
+  try{
+    const stores = await readFile(STORES_FILE);
+    const users = await readFile(USERS_FILE);
+    const usersById = new Map(users.map(u => [u.id, u]));
+    const pending = stores.filter(s => s.status === 'pending').map(s => {
+      const owner = usersById.get(s.ownerId);
+      return Object.assign({}, s, { ownerEmail: owner ? owner.email : null });
+    });
+    res.json(pending);
+  }catch(err){
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 app.listen(PORT, ()=> console.log(`ScalperBlock demo API running on http://localhost:${PORT}`));
